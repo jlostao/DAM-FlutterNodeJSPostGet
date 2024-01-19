@@ -21,27 +21,25 @@ class AppData with ChangeNotifier {
   dynamic dataFile;
 
   // Funció per fer crides tipus 'GET' i agafar la informació a mida que es va rebent
-  Future<String> loadHttpGetByChunks(String url) async {
+  Future<void> loadHttpGetByChunks(String url) async {
     var httpClient = HttpClient();
-    var completer = Completer<String>();
-    String result = "";
-
-    // If development, wait 1 second to simulate a delay
-    if (!kReleaseMode) {
-      await Future.delayed(const Duration(seconds: 1));
-    }
+    var completer = Completer<void>();
 
     try {
       var request = await httpClient.getUrl(Uri.parse(url));
       var response = await request.close();
 
+      dataGet = "";
+
+      // Listen to each chunk of data
       response.transform(utf8.decoder).listen(
         (data) {
           // Aquí rep cada un dels troços de dades que envia el servidor amb 'res.write'
-          result += data;
+          dataGet += data;
+          notifyListeners();
         },
         onDone: () {
-          completer.complete(result);
+          completer.complete();
         },
         onError: (error) {
           completer.completeError(
@@ -56,14 +54,15 @@ class AppData with ChangeNotifier {
   }
 
   // Funció per fer crides tipus 'POST' amb un arxiu adjunt,
-  //i agafar la informació a mida que es va rebent
-  Future<String> loadHttpPostByChunks(String url, File file) async {
+  // i agafar la informació a mida que es va rebent
+  Future<void> loadHttpPostByChunks(String url, File file) async {
+    var completer = Completer<void>();
     var request = http.MultipartRequest('POST', Uri.parse(url));
 
-    // Afegir les dades JSON com a part del formulari
+    // Add JSON data as part of the form
     request.fields['data'] = '{"type":"test"}';
 
-    // Adjunta l'arxiu com a part del formulari
+    // Attach the file as part of the form
     var stream = http.ByteStream(file.openRead());
     var length = await file.length();
     var multipartFile = http.MultipartFile('file', stream, length,
@@ -71,18 +70,31 @@ class AppData with ChangeNotifier {
         contentType: MediaType('application', 'octet-stream'));
     request.files.add(multipartFile);
 
-    var response = await request.send();
+    try {
+      var response = await request.send();
 
-    if (response.statusCode == 200) {
-      // La sol·licitud ha estat exitosa
-      var responseData = await response.stream.toBytes();
-      var responseString = utf8.decode(responseData);
-      return responseString;
-    } else {
-      // La sol·licitud ha fallat
-      throw Exception(
-          "Error del servidor (appData/loadHttpPostByChunks): ${response.reasonPhrase}");
+      dataPost = "";
+
+      // Listen to each chunk of data
+      response.stream.transform(utf8.decoder).listen(
+        (data) {
+          // Update dataPost with the latest data
+          dataPost += data;
+          notifyListeners();
+        },
+        onDone: () {
+          completer.complete();
+        },
+        onError: (error) {
+          completer.completeError(
+              "Error del servidor (appData/loadHttpPostByChunks): $error");
+        },
+      );
+    } catch (e) {
+      completer.completeError("Excepció (appData/loadHttpPostByChunks): $e");
     }
+
+    return completer.future;
   }
 
   // Funció per fer carregar dades d'un arxiu json de la carpeta 'assets'
@@ -107,23 +119,15 @@ class AppData with ChangeNotifier {
       case 'GET':
         loadingGet = true;
         notifyListeners();
-
-        // TODO: Cal modificar el funcionament d'aquí
-        // per tal d'actualitzar el valor de 'dataGet' a mida que es va rebent
-        // la informació del servidor, enlloc de mostrar 'Loading ...'
-        dataGet = await loadHttpGetByChunks(
+        await loadHttpGetByChunks(
             'http://localhost:3000/llistat?cerca=motos&color=vermell');
-
         loadingGet = false;
         notifyListeners();
         break;
       case 'POST':
         loadingPost = true;
         notifyListeners();
-
-        dataPost = await loadHttpPostByChunks(
-            'http://localhost:3000/data', selectedFile!);
-
+        await loadHttpPostByChunks('http://localhost:3000/data', selectedFile!);
         loadingPost = false;
         notifyListeners();
         break;

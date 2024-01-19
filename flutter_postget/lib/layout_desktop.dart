@@ -14,6 +14,16 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   TextEditingController _messageController = TextEditingController();
+  List<Widget> messages = [];
+
+  @override
+  void initState() {
+    super.initState();
+    // Sample messages for testing
+    messages.add(ChatMessage(text: 'Hello! How can I help you?'));
+    messages.add(UserMessage(text: 'Hi there!'));
+    messages.add(ChatMessage(text: 'This is a sample response.'));
+  }
 
   Future<File> pickFile() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles();
@@ -41,19 +51,18 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('ChatGPT'),
+        title: Text('AI Chat'),
       ),
       body: Column(
         children: [
           Expanded(
-            child: ListView(
-              reverse: true,
-              padding: const EdgeInsets.all(16.0),
-              children: [
-                // Replace the following with messages from the AI and user
-                ChatMessage(text: 'Hello! How can I help you?'),
-                UserMessage(text: 'Hi there!'),
-              ],
+            child: ListView.builder(
+              reverse: false, // Set this to false
+              padding: EdgeInsets.all(16.0),
+              itemCount: messages.length,
+              itemBuilder: (BuildContext context, int index) {
+                return messages[index];
+              },
             ),
           ),
           _buildMessageInput(),
@@ -65,35 +74,34 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget _buildMessageInput() {
     AppData appData = Provider.of<AppData>(context);
     return Container(
-      padding: const EdgeInsets.all(8.0),
+      padding: EdgeInsets.all(8.0),
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.attach_file),
+            icon: Icon(Icons.attach_file),
             onPressed: () {
               uploadFile(appData);
             },
           ),
           Expanded(
-            child: TextField(
-              controller: _messageController,
-              decoration: const InputDecoration(
-                hintText: 'Type a message...',
-                border: OutlineInputBorder(),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              child: TextField(
+                controller: _messageController,
+                decoration: InputDecoration(
+                  hintText: 'Type a message...',
+                  border: OutlineInputBorder(),
+                ),
               ),
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.send),
+            icon: Icon(Icons.send),
             onPressed: () {
               // Handle sending the message
               String userMessage = _messageController.text;
-              // You can send the user message to an AI model here
-              // and update the chat UI with the AI's response
               setState(() {
-                // Replace the following with AI response
-                // For simplicity, just echoing the user's message
-                ChatMessage(text: userMessage);
+                messages.add(UserMessage(text: userMessage));
                 _messageController.clear();
               });
             },
