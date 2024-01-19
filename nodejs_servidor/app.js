@@ -96,19 +96,40 @@ app.post('/data', upload.single('file'), async (req, res) => {
   // - 'conversa' que retornara una petició generada per 'mistral'
   // - 'imatge' que retornara una imatge generada per 'llava'
 
-  if (objPost.type === 'test') {
-    if (uploadedFile) {
-      let fileContent = uploadedFile.buffer.toString('utf-8')
-      console.log('Contingut de l\'arxiu adjunt:')
-      console.log(fileContent)
+  if (objPost.type == 'test' && objPost.mensaje) {
+    try {
+      console.log(objPost.mensaje);
+      // Utiliza el mensaje proporcionado en lugar del prompt fijo
+      const apiResponse = await axios.post('http://localhost:11434/api/generate', {
+        model: 'mistral',
+        prompt: objPost.mensaje,
+      });
+
+      // Almacena todas las respuestas en un array
+      const responses = [];
+      apiResponse.data.split('\n').forEach(line => {
+        if (line.trim() !== '') {
+          const responseObj = JSON.parse(line);
+          responses.push(responseObj);
+          // Imprime cada respuesta en el servidor
+
+        }
+      });
+
+      // Construye un objeto JSON con la estructura deseada
+      const jsonResponse = {
+        type: 'respuesta',
+        mensaje: responses.map(response => response.response).join(''),
+      };
+      console.log(jsonResponse);
+      // Envía el objeto JSON como respuesta
+      res.status(200).json(jsonResponse);
+      responses.clear;
+    } catch (error) {
+      console.error('Error al realizar la solicitud a la API:', error);
+      res.status(500).send('Error interno del seridor.');
     }
-    res.writeHead(200, { 'Content-Type': 'text/plain; charset=UTF-8' })
-    res.write("POST First line\n")
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    res.write("POST Second line\n")
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    res.end("POST Last line\n")
   } else {
-    res.status(400).send('Sol·licitud incorrecta.')
+    res.status(400).send('Solicitud incorrecta. Se requiere la propiedad "type" y "mensaje".');
   }
 })
