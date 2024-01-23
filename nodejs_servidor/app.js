@@ -1,7 +1,7 @@
+const http = require('http');
 const express = require('express')
 const multer = require('multer');
 const url = require('url')
-const axios = require('axios');
 
 const app = express()
 const port = process.env.PORT || 3000
@@ -63,8 +63,11 @@ async function getLlistat(req, res) {
   if (query.cerca && query.color) {
     // Així es retorna un text per parts (chunks)
     res.writeHead(200, { 'Content-Type': 'text/plain; charset=UTF-8' });
+    await new Promise(resolve => setTimeout(resolve, 1000))
     res.write(`result: "Aquí tens el llistat de ${query.cerca} de color ${query.color}"`)
+    await new Promise(resolve => setTimeout(resolve, 1000))
     res.write(`\n list: ["item0", "item1", "item2"]`)
+    await new Promise(resolve => setTimeout(resolve, 1000))
     res.end(`\n end: "Això és tot"`)
   } else {
     // Així es retorna un objecte JSON directament
@@ -89,48 +92,67 @@ app.post('/data', upload.single('file'), async (req, res) => {
     return
   }
 
-  // Aquí s'executen totes les accions necessaries
-  // però tenint en compte el tipus de petició 
-  // (en aquest exemple només 'test')
-
-  // A l'exercici 'XatIETI' hi hauràn dos tipus de petició:
-  // - 'conversa' que retornara una petició generada per 'mistral'
-  // - 'imatge' que retornara una imatge generada per 'llava'
-
-  if (objPost.type == 'test' && objPost.mensaje) {
-    try {
-      console.log(objPost.mensaje);
-      // Utiliza el mensaje proporcionado en lugar del prompt fijo
-      const apiResponse = await axios.post('http://localhost:11434/api/generate', {
-        model: 'mistral',
-        prompt: objPost.mensaje,
-      });
-
-      // Almacena todas las respuestas en un array
-      const responses = [];
-      apiResponse.data.split('\n').forEach(line => {
-        if (line.trim() !== '') {
-          const responseObj = JSON.parse(line);
-          responses.push(responseObj);
-          // Imprime cada respuesta en el servidor
-
-        }
-      });
-
-      // Construye un objeto JSON con la estructura deseada
-      const jsonResponse = {
-        type: 'respuesta',
-        mensaje: responses.map(response => response.response).join(''),
-      };
-      console.log(jsonResponse);
-      // Envía el objeto JSON como respuesta
-      res.status(200).json(jsonResponse);
-      responses.clear;
-    } catch (error) {
-      console.error('Error al realizar la solicitud a la API:', error);
-      res.status(500).send('Error interno del seridor.');
+  if (objPost.type === 'test') {
+    if (uploadedFile) {
+      let fileContent = uploadedFile.buffer.toString('utf-8')
+      console.log('Contingut de l\'arxiu adjunt:')
+      console.log(fileContent)
     }
+    res.writeHead(200, { 'Content-Type': 'text/plain; charset=UTF-8' })
+    res.write("POST First line\n")
+
+    // TODO: Modificar la següent funció 
+    await callOllama(res, "mistral", "Here is a story about llamas eating grass")
+
+    // El següent codi mostra com 'escriure' informació per l'usuari, cada 1.5 segons
+    await new Promise(resolve => setTimeout(resolve, 1500))
+    res.write("POST Second line\n")
+    await new Promise(resolve => setTimeout(resolve, 1500))
+    res.write("POST Third line\n")
+    res.end("")
   } else {
-    res.status(400).send('Solicitud incorrecta. Se requiere la propiedad "type" y "mensaje".');
+    res.status(400).send('Sol·licitud incorrecta.')
   }
 })
+
+async function callOllama(userResponse, ollamaModel, query) {
+
+  return new Promise((resolve, reject) => {
+    const options = {
+      hostname: 'localhost',
+      port: 11434,
+      path: '/api/generate',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      rejectUnauthorized: false
+    }
+
+    const data = JSON.stringify({
+      model: ollamaModel,
+      prompt: query
+    })
+
+    const req = http.request(options, (res) => {
+      res.on('data', (chunk) => {
+        let obj = JSON.parse(chunk)
+        console.log(obj.response)
+        // TODO: Escriure a 'userResponse' el text rebut a 'obj.response'
+        userResponse.send(obj.response)
+      });
+      res.on('end', () => {
+        console.log("done")
+        resolve()
+      })
+    })
+
+    req.on('error', (error) => {
+      console.error("Error en la sol·licitud: ", error)
+      reject(error)
+    })
+
+    req.write(data)
+    req.end()
+  })
+}
