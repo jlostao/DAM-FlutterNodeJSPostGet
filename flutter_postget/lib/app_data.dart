@@ -116,7 +116,7 @@ class AppData with ChangeNotifier {
   }
 
   // Carregar dades segons el tipus que es demana
-  void load(String type, {File? selectedFile}) async {
+  void load(String type, String prompt, String imgBase64) async {
     switch (type) {
       case 'GET':
         loadingGet = true;
