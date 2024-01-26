@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_postget/app_data.dart';
@@ -14,6 +13,7 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   TextEditingController _messageController = TextEditingController();
+  String selectedImageBase64 = "";
 
   @override
   void initState() {
@@ -28,17 +28,6 @@ class _ChatScreenState extends State<ChatScreen> {
       return file;
     } else {
       throw Exception("No s'ha seleccionat cap arxiu.");
-    }
-  }
-
-  // Funció per carregar l'arxiu seleccionat amb una sol·licitud POST
-  Future<void> uploadFile(AppData appData) async {
-    try {
-      appData.load("POST", selectedFile: await pickFile());
-    } catch (e) {
-      if (kDebugMode) {
-        print("Excepció (uploadFile): $e");
-      }
     }
   }
 
@@ -92,8 +81,12 @@ class _ChatScreenState extends State<ChatScreen> {
         children: [
           IconButton(
             icon: Icon(Icons.attach_file),
-            onPressed: () {
-              uploadFile(appData);
+            onPressed: () async {
+              File? file = await pickFile();
+              if (file != null) {
+                // Convert the file to base64 and update the selectedImageBase64
+                selectedImageBase64 = appData.fileToBase64(file);
+              }
             },
           ),
           Expanded(
@@ -111,12 +104,18 @@ class _ChatScreenState extends State<ChatScreen> {
           IconButton(
             icon: Icon(Icons.send),
             onPressed: () {
-              // Handle sending the message
               String userMessage = _messageController.text;
-              setState(() {
-                appData.messages.add(UserMessage(text: userMessage));
-                _messageController.clear();
-              });
+              if (userMessage.isNotEmpty || selectedImageBase64.isNotEmpty) {
+                // If message is not empty or image is selected
+                appData.load(userMessage, selectedImageBase64);
+                setState(() {
+                  if (userMessage.isNotEmpty) {
+                    // If userMessage is not empty, add UserMessage
+                    appData.messages.add(UserMessage(text: userMessage));
+                  }
+                  _messageController.clear();
+                });
+              }
             },
           ),
         ],
