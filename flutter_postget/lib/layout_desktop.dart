@@ -14,15 +14,10 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   TextEditingController _messageController = TextEditingController();
-  List<Widget> messages = [];
 
   @override
   void initState() {
     super.initState();
-    // Sample messages for testing
-    messages.add(ChatMessage(text: 'Hello! How can I help you?'));
-    messages.add(UserMessage(text: 'Hi there!'));
-    messages.add(ChatMessage(text: 'This is a sample response.'));
   }
 
   Future<File> pickFile() async {
@@ -49,24 +44,42 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    AppData appData = Provider.of<AppData>(context);
     return Scaffold(
-      appBar: AppBar(
-        title: Text('AI Chat'),
-      ),
       body: Column(
         children: [
-          Expanded(
-            child: ListView.builder(
-              reverse: false, // Set this to false
-              padding: EdgeInsets.all(16.0),
-              itemCount: messages.length,
-              itemBuilder: (BuildContext context, int index) {
-                return messages[index];
-              },
-            ),
-          ),
+          _buildMessageArea(appData),
           _buildMessageInput(),
         ],
+      ),
+    );
+  }
+
+  Widget _buildMessageArea(AppData appData) {
+    return Expanded(
+      child: Container(
+        margin: EdgeInsets.all(16.0),
+        constraints: BoxConstraints(
+          maxWidth: 600.0, // Set the maximum width for the messages area
+        ),
+        decoration: BoxDecoration(
+          color: Colors.grey[200], // Set a slightly darker background color
+          borderRadius: BorderRadius.circular(8.0),
+        ),
+        child: ListView.builder(
+          reverse: false, // Set this to false
+          itemCount: appData.messages.length,
+          itemBuilder: (BuildContext context, int index) {
+            return Column(
+              children: [
+                index > 0
+                    ? Divider(color: Colors.black, thickness: 1.0)
+                    : Container(), // Add a separator line
+                appData.messages[index],
+              ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -101,7 +114,7 @@ class _ChatScreenState extends State<ChatScreen> {
               // Handle sending the message
               String userMessage = _messageController.text;
               setState(() {
-                messages.add(UserMessage(text: userMessage));
+                appData.messages.add(UserMessage(text: userMessage));
                 _messageController.clear();
               });
             },

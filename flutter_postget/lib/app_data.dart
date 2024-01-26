@@ -20,6 +20,8 @@ class AppData with ChangeNotifier {
   dynamic dataPost;
   dynamic dataFile;
 
+  List<Widget> messages = [];
+
   // Funció per fer crides tipus 'GET' i agafar la informació a mida que es va rebent
   Future<void> loadHttpGetByChunks(String url) async {
     var httpClient = HttpClient();
