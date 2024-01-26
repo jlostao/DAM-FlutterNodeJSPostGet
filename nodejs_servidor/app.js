@@ -98,17 +98,7 @@ app.post('/data', upload.single('file'), async (req, res) => {
       console.log('Contingut de l\'arxiu adjunt:')
       console.log(fileContent)
     }
-    res.writeHead(200, { 'Content-Type': 'text/plain; charset=UTF-8' })
-    res.write("POST First line\n")
-
-    // TODO: Modificar la següent funció 
     await callOllama(res, "mistral", "Here is a story about llamas eating grass")
-
-    // El següent codi mostra com 'escriure' informació per l'usuari, cada 1.5 segons
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    res.write("POST Second line\n")
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    res.write("POST Third line\n")
     res.end("")
   } else {
     res.status(400).send('Sol·licitud incorrecta.')
@@ -138,8 +128,7 @@ async function callOllama(userResponse, ollamaModel, query) {
       res.on('data', (chunk) => {
         let obj = JSON.parse(chunk)
         console.log(obj.response)
-        // TODO: Escriure a 'userResponse' el text rebut a 'obj.response'
-        userResponse.send(obj.response)
+        userResponse.write(obj.response);
       });
       res.on('end', () => {
         console.log("done")

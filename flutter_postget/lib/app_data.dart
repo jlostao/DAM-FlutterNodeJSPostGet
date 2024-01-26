@@ -121,8 +121,7 @@ class AppData with ChangeNotifier {
       case 'GET':
         loadingGet = true;
         notifyListeners();
-        await loadHttpGetByChunks(
-            'http://localhost:3000/llistat?cerca=motos&color=vermell');
+        await loadHttpGetByChunks('http://localhost:3000/data');
         loadingGet = false;
         notifyListeners();
         break;
