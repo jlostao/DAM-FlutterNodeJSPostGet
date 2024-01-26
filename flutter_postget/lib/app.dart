@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'app_data.dart';
 import 'layout_desktop.dart';
 
 class App extends StatelessWidget {

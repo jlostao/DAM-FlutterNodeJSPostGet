@@ -92,13 +92,21 @@ app.post('/data', upload.single('file'), async (req, res) => {
     return
   }
 
-  if (objPost.type === 'test') {
+  if (objPost.type === 'text') {
     if (uploadedFile) {
       let fileContent = uploadedFile.buffer.toString('utf-8')
       console.log('Contingut de l\'arxiu adjunt:')
       console.log(fileContent)
     }
-    await callOllama(res, "mistral", "Here is a story about llamas eating grass")
+    await callOllama(res, "mistral", objPost.info)
+    res.end("")
+  } else if (objPost.type === 'img') {
+    if (uploadedFile) {
+      let fileContent = uploadedFile.buffer.toString('utf-8')
+      console.log('Contingut de l\'arxiu adjunt:')
+      console.log(fileContent)
+    }
+    await callOllama(res, "llava", objPost.info)
     res.end("")
   } else {
     res.status(400).send('Sol·licitud incorrecta.')

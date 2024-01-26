@@ -5,7 +5,6 @@ import 'package:flutter/foundation.dart' show kReleaseMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
-import 'package:http_parser/http_parser.dart';
 
 class AppData with ChangeNotifier {
   // Access appData globaly with:
@@ -57,20 +56,17 @@ class AppData with ChangeNotifier {
 
   // Funció per fer crides tipus 'POST' amb un arxiu adjunt,
   // i agafar la informació a mida que es va rebent
-  Future<void> loadHttpPostByChunks(String url, File file) async {
+  Future<void> loadHttpPostByChunks(
+      String url, String prompt, String imgBase64) async {
     var completer = Completer<void>();
     var request = http.MultipartRequest('POST', Uri.parse(url));
 
     // Add JSON data as part of the form
-    request.fields['data'] = '{"type":"test"}';
-
-    // Attach the file as part of the form
-    var stream = http.ByteStream(file.openRead());
-    var length = await file.length();
-    var multipartFile = http.MultipartFile('file', stream, length,
-        filename: file.path.split('/').last,
-        contentType: MediaType('application', 'octet-stream'));
-    request.files.add(multipartFile);
+    if (imgBase64 == "") {
+      request.fields['data'] = '{"type":"text", "info": ' + prompt + '}';
+    } else {
+      request.fields['data'] = '{"type":"img", "info": ' + imgBase64 + '}';
+    }
 
     try {
       var response = await request.send();
@@ -116,32 +112,11 @@ class AppData with ChangeNotifier {
   }
 
   // Carregar dades segons el tipus que es demana
-  void load(String type, String prompt, String imgBase64) async {
-    switch (type) {
-      case 'GET':
-        loadingGet = true;
-        notifyListeners();
-        await loadHttpGetByChunks('http://localhost:3000/data');
-        loadingGet = false;
-        notifyListeners();
-        break;
-      case 'POST':
-        loadingPost = true;
-        notifyListeners();
-        await loadHttpPostByChunks('http://localhost:3000/data', selectedFile!);
-        loadingPost = false;
-        notifyListeners();
-        break;
-      case 'FILE':
-        loadingFile = true;
-        notifyListeners();
-
-        var fileData = await readJsonAsset("assets/data/example.json");
-
-        loadingFile = false;
-        dataFile = fileData;
-        notifyListeners();
-        break;
-    }
+  void load(String prompt, String imgBase64) async {
+    loadingPost = true;
+    notifyListeners();
+    await loadHttpPostByChunks('http://localhost:3000/data', prompt, imgBase64);
+    loadingPost = false;
+    notifyListeners();
   }
 }
