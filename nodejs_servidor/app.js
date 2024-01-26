@@ -108,7 +108,7 @@ app.post('/data', upload.single('file'), async (req, res) => {
     }
     await callOllama(res, "llava", objPost.info)
     res.end("")
-  } else {
+  } else if (objPost.type === 'end') {
     res.status(400).send('Sol·licitud incorrecta.')
   }
 })

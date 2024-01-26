@@ -63,9 +63,13 @@ class AppData with ChangeNotifier {
 
     // Add JSON data as part of the form
     if (imgBase64 == "") {
-      request.fields['data'] = '{"type":"text", "info": ' + prompt + '}';
+      request.fields['data'] =
+          '{"type":"text", "info": ' + '"' + prompt + '"' + '}';
+    } else if (imgBase64 != "") {
+      request.fields['data'] =
+          '{"type":"text", "info": ' + '"' + imgBase64 + '"' + '}';
     } else {
-      request.fields['data'] = '{"type":"img", "info": ' + imgBase64 + '}';
+      request.fields['data'] = '{"type":"end"}';
     }
 
     try {
