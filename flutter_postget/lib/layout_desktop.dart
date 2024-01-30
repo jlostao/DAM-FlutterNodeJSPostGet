@@ -14,6 +14,7 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   TextEditingController _messageController = TextEditingController();
   String selectedImageBase64 = "";
+  String userMessage = "";
 
   @override
   void initState() {
@@ -34,6 +35,8 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     AppData appData = Provider.of<AppData>(context);
+
+
     return Scaffold(
       body: Column(
         children: [
@@ -75,6 +78,28 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Widget _buildMessageInput() {
     AppData appData = Provider.of<AppData>(context);
+
+    String stringGet = "";
+    if (appData.loadingGet && appData.dataGet == "") {
+      stringGet = "Loading ...";
+    } else if (appData.dataGet != null) {
+      stringGet = "GET: ${appData.dataGet.toString()}";
+    }
+
+    String stringPost = "";
+    if (appData.loadingPost && appData.dataPost == "") {
+      stringPost = "Loading ...";
+    } else if (appData.dataPost != null) {
+      stringPost = "GET: ${appData.dataPost.toString()}";
+    }
+
+    String stringFile = "";
+    if (appData.loadingFile) {
+      stringFile = "Loading ...";
+    } else if (appData.dataFile != null) {
+      stringFile = "File: ${appData.dataFile}";
+    }
+    
     return Container(
       padding: EdgeInsets.all(8.0),
       child: Row(
@@ -104,18 +129,16 @@ class _ChatScreenState extends State<ChatScreen> {
           IconButton(
             icon: Icon(Icons.send),
             onPressed: () {
-              String userMessage = _messageController.text;
-              if (userMessage.isNotEmpty || selectedImageBase64.isNotEmpty) {
-                // If message is not empty or image is selected
-                appData.load(userMessage, selectedImageBase64);
-                setState(() {
-                  if (userMessage.isNotEmpty) {
-                    // If userMessage is not empty, add UserMessage
-                    appData.messages.add(UserMessage(text: userMessage));
-                  }
-                  _messageController.clear();
-                });
-              }
+              userMessage = _messageController.text;
+              appData.load(userMessage, selectedImageBase64);
+              setState(() {
+                if (userMessage.isNotEmpty) {
+                  // If userMessage is not empty, add UserMessage
+                  appData.messages.add(UserMessage(text: userMessage));
+                }
+                _messageController.clear();
+                appData.messages.add(ChatMessage(text: stringPost));
+              });
             },
           ),
         ],
@@ -139,7 +162,7 @@ class ChatMessage extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8.0),
             decoration: BoxDecoration(
-              color: Colors.blue,
+              color: Colors.grey,
               borderRadius: BorderRadius.circular(8.0),
             ),
             child: Text(
@@ -168,7 +191,7 @@ class UserMessage extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8.0),
             decoration: BoxDecoration(
-              color: Colors.grey,
+              color: Colors.blue,
               borderRadius: BorderRadius.circular(8.0),
             ),
             child: Text(text),
