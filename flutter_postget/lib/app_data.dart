@@ -65,9 +65,17 @@ class AppData with ChangeNotifier {
     if (imgBase64 == "") {
       request.fields['data'] =
           '{"type":"text", "info": ' + '"' + prompt + '"' + '}';
+<<<<<<< HEAD
     } else {
       request.fields['data'] =
           '{"type":"img", "info": ' + '"' + imgBase64 + '"' + '}';
+=======
+    } else if (imgBase64 != "") {
+      request.fields['data'] =
+          '{"type":"text", "info": ' + '"' + imgBase64 + '"' + '}';
+    } else {
+      request.fields['data'] = '{"type":"end"}';
+>>>>>>> b810f32b3b3bcd3b626fb51dcdc97f90d8f45cdf
     }
 
     try {
