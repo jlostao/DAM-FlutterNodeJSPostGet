@@ -13,6 +13,7 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   TextEditingController _messageController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
   String selectedImageBase64 = "";
   String userMessage = "";
 
@@ -36,7 +37,6 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget build(BuildContext context) {
     AppData appData = Provider.of<AppData>(context);
 
-
     return Scaffold(
       body: Column(
         children: [
@@ -59,16 +59,39 @@ class _ChatScreenState extends State<ChatScreen> {
           borderRadius: BorderRadius.circular(8.0),
         ),
         child: ListView.builder(
-          reverse: false, // Set this to false
+          controller: _scrollController, // Attach ScrollController here
           itemCount: appData.messages.length,
           itemBuilder: (BuildContext context, int index) {
-            return Column(
-              children: [
-                index > 0
-                    ? Divider(color: Colors.black, thickness: 1.0)
-                    : Container(), // Add a separator line
-                appData.messages[index],
-              ],
+            // Determine message type based on position
+            Widget messageWidget;
+            if (index % 2 == 0) {
+              // Even index: user message
+              messageWidget = UserMessage(text: appData.messages[index]);
+            } else {
+              // Odd index: system message
+              messageWidget = ChatMessage(text: appData.messages[index]);
+            }
+            return Padding(
+              padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+              child: Align(
+                alignment: (index % 2 == 0)
+                    ? Alignment.centerRight // Align user messages to the right
+                    : Alignment.centerLeft, // Align system messages to the left
+                child: Container(
+                  padding: EdgeInsets.all(8.0),
+                  decoration: BoxDecoration(
+                    color: (index % 2 == 0)
+                        ? Colors.blue
+                        : Colors.grey, // Switched colors
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
+                  child: Text(
+                    appData.messages[index],
+                    style: TextStyle(color: Colors.white),
+                    maxLines: null, // Allow text to expand vertically
+                  ),
+                ),
+              ),
             );
           },
         ),
@@ -99,7 +122,7 @@ class _ChatScreenState extends State<ChatScreen> {
     } else if (appData.dataFile != null) {
       stringFile = "File: ${appData.dataFile}";
     }
-    
+
     return Container(
       padding: EdgeInsets.all(8.0),
       child: Row(
@@ -134,10 +157,10 @@ class _ChatScreenState extends State<ChatScreen> {
               setState(() {
                 if (userMessage.isNotEmpty) {
                   // If userMessage is not empty, add UserMessage
-                  appData.messages.add(UserMessage(text: userMessage));
+                  appData.messages.add(userMessage);
                 }
                 _messageController.clear();
-                appData.messages.add(ChatMessage(text: stringPost));
+                appData.messages.add(stringPost);
               });
             },
           ),
@@ -162,12 +185,12 @@ class ChatMessage extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8.0),
             decoration: BoxDecoration(
-              color: Colors.grey,
+              color: Colors.blue,
               borderRadius: BorderRadius.circular(8.0),
             ),
             child: Text(
               text,
-              style: const TextStyle(color: Colors.white),
+              style: const TextStyle(color: Colors.blue),
             ),
           ),
         ],
@@ -191,7 +214,7 @@ class UserMessage extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8.0),
             decoration: BoxDecoration(
-              color: Colors.blue,
+              color: Colors.white,
               borderRadius: BorderRadius.circular(8.0),
             ),
             child: Text(text),

@@ -19,7 +19,7 @@ class AppData with ChangeNotifier {
   dynamic dataPost;
   dynamic dataFile;
 
-  List<Widget> messages = [];
+  List<String> messages = [];
 
   // Funció per fer crides tipus 'GET' i agafar la informació a mida que es va rebent
   Future<void> loadHttpGetByChunks(String url) async {
@@ -61,33 +61,34 @@ class AppData with ChangeNotifier {
     var completer = Completer<void>();
     var request = http.MultipartRequest('POST', Uri.parse(url));
 
-    // Add JSON data as part of the form
     if (imgBase64 == "") {
       request.fields['data'] =
           '{"type":"text", "info": ' + '"' + prompt + '"' + '}';
-<<<<<<< HEAD
-    } else {
-      request.fields['data'] =
-          '{"type":"img", "info": ' + '"' + imgBase64 + '"' + '}';
-=======
     } else if (imgBase64 != "") {
       request.fields['data'] =
           '{"type":"text", "info": ' + '"' + imgBase64 + '"' + '}';
     } else {
       request.fields['data'] = '{"type":"end"}';
->>>>>>> b810f32b3b3bcd3b626fb51dcdc97f90d8f45cdf
     }
 
     try {
       var response = await request.send();
-
-      dataPost = "";
+      dataPost = ""; // Reset dataPost
 
       // Listen to each chunk of data
       response.stream.transform(utf8.decoder).listen(
         (data) {
           // Update dataPost with the latest data
           dataPost += data;
+
+          // Update the last message in the list or add a new one if it's empty
+          if (messages.isEmpty) {
+            messages.add(dataPost);
+          } else {
+            messages[messages.length - 1] = dataPost;
+          }
+
+          // Notify listeners to update the UI
           notifyListeners();
         },
         onDone: () {
