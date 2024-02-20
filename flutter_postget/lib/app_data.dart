@@ -66,7 +66,7 @@ class AppData with ChangeNotifier {
           '{"type":"text", "info": ' + '"' + prompt + '"' + '}';
     } else if (imgBase64 != "") {
       request.fields['data'] =
-          '{"type":"text", "info": ' + '"' + imgBase64 + '"' + '}';
+          '{"type":"image", "info": ' + '"' + imgBase64 + '"' + '}';
     } else {
       request.fields['data'] = '{"type":"end"}';
     }
