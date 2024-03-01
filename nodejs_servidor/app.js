@@ -92,36 +92,28 @@ app.post('/data', upload.single('file'), async (req, res) => {
     return
   }
 
-  if (objPost.type === 'img') {
+  if (objPost.type === 'text') {
     if (uploadedFile) {
       let fileContent = uploadedFile.buffer.toString('utf-8')
       console.log('Contingut de l\'arxiu adjunt:')
       console.log(fileContent)
     }
-    await callOllama(res, "llava", objPost.info)
+    await callMistral(res, objPost.info)
     res.end("")
-  } else if (objPost.type === 'text') {
+  } else if (objPost.type === 'img') {
     if (uploadedFile) {
       let fileContent = uploadedFile.buffer.toString('utf-8')
       console.log('Contingut de l\'arxiu adjunt:')
       console.log(fileContent)
     }
-    await callOllama(res, "mistral", objPost.info)
-    res.end("")
-  } else if (objPost.type === 'end') {
-    if (uploadedFile) {
-      let fileContent = uploadedFile.buffer.toString('utf-8')
-      console.log('Contingut de l\'arxiu adjunt:')
-      console.log(fileContent)
-    }
-    await callOllama(res, "mistral", objPost.info)
+    await callLlava(res, "Describe la imagen", objPost.info)
     res.end("")
   } else {
     res.status(400).send('Sol·licitud incorrecta.')
   }
 })
 
-async function callOllama(userResponse, ollamaModel, query) {
+async function callMistral(userResponse, query) {
 
   return new Promise((resolve, reject) => {
     const options = {
@@ -135,18 +127,52 @@ async function callOllama(userResponse, ollamaModel, query) {
       rejectUnauthorized: false
     }
 
-    if (ollamaModel == "llava") {
-      const data = JSON.stringify({
-        model: ollamaModel,
-        prompt: "Describe la imagen.",
-        images: query
+    const data = JSON.stringify({
+      model: "mistral",
+      prompt: query
+    })
+
+    const req = http.request(options, (res) => {
+      res.on('data', (chunk) => {
+        let obj = JSON.parse(chunk)
+        console.log(obj.response)
+        userResponse.write(obj.response);
+      });
+      res.on('end', () => {
+        console.log("done")
+        resolve()
       })
-    } else {
-      const data = JSON.stringify({
-        model: ollamaModel,
-        prompt: query
-      })
+    })
+
+    req.on('error', (error) => {
+      console.error("Error en la sol·licitud: ", error)
+      reject(error)
+    })
+
+    req.write(data)
+    req.end()
+  })
+}
+
+async function callLlava(userResponse, query, imageBase64) {
+
+  return new Promise((resolve, reject) => {
+    const options = {
+      hostname: 'localhost',
+      port: 11434,
+      path: '/api/generate',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      rejectUnauthorized: false
     }
+
+    const data = JSON.stringify({
+      model: "llava",
+      prompt: query,
+      images: [imageBase64]
+    })
 
     const req = http.request(options, (res) => {
       res.on('data', (chunk) => {
