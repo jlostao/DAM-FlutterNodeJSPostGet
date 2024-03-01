@@ -92,7 +92,15 @@ app.post('/data', upload.single('file'), async (req, res) => {
     return
   }
 
-  if (objPost.type === 'text') {
+  if (objPost.type === 'img') {
+    if (uploadedFile) {
+      let fileContent = uploadedFile.buffer.toString('utf-8')
+      console.log('Contingut de l\'arxiu adjunt:')
+      console.log(fileContent)
+    }
+    await callOllama(res, "llava", objPost.info)
+    res.end("")
+  } else if (objPost.type === 'text') {
     if (uploadedFile) {
       let fileContent = uploadedFile.buffer.toString('utf-8')
       console.log('Contingut de l\'arxiu adjunt:')
@@ -100,13 +108,13 @@ app.post('/data', upload.single('file'), async (req, res) => {
     }
     await callOllama(res, "mistral", objPost.info)
     res.end("")
-  } else if (objPost.type === 'img') {
+  } else if (objPost.type === 'end') {
     if (uploadedFile) {
       let fileContent = uploadedFile.buffer.toString('utf-8')
       console.log('Contingut de l\'arxiu adjunt:')
       console.log(fileContent)
     }
-    await callOllama(res, "llava", objPost.info)
+    await callOllama(res, "mistral", objPost.info)
     res.end("")
   } else {
     res.status(400).send('Sol·licitud incorrecta.')
@@ -127,10 +135,18 @@ async function callOllama(userResponse, ollamaModel, query) {
       rejectUnauthorized: false
     }
 
-    const data = JSON.stringify({
-      model: ollamaModel,
-      prompt: query
-    })
+    if (ollamaModel == "llava") {
+      const data = JSON.stringify({
+        model: ollamaModel,
+        prompt: "Describe la imagen.",
+        images: query
+      })
+    } else {
+      const data = JSON.stringify({
+        model: ollamaModel,
+        prompt: query
+      })
+    }
 
     const req = http.request(options, (res) => {
       res.on('data', (chunk) => {
