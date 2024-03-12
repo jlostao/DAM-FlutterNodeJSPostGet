@@ -16,6 +16,7 @@ class _ChatScreenState extends State<ChatScreen> {
   final ScrollController _scrollController = ScrollController();
   String selectedImageBase64 = "";
   String userMessage = "";
+  File? selectedImageFile;
 
   @override
   void initState() {
@@ -31,6 +32,21 @@ class _ChatScreenState extends State<ChatScreen> {
     } else {
       throw Exception("No s'ha seleccionat cap arxiu.");
     }
+  }
+
+  void showImagePreview(File file) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          child: Container(
+            width: 300,
+            height: 300,
+            child: Image.file(file, fit: BoxFit.cover),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -132,8 +148,10 @@ class _ChatScreenState extends State<ChatScreen> {
             onPressed: () async {
               File? file = await pickFile();
               if (file != null) {
-                // Convert the file to base64 and update the selectedImageBase64
-                selectedImageBase64 = appData.fileToBase64(file);
+                setState(() {
+                  selectedImageBase64 = appData.fileToBase64(file);
+                  showImagePreview(file);
+                });
               }
             },
           ),
